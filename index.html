@@ -1,355 +1,616 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DN Order Tracking System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DN Order Tracking Dashboard</title>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://html2canvas.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Poppins', 'sans-serif'],
-                    },
-                    colors: {
-                        'brand-bg': '#FFB7C5', // Pink background luar
-                        'card-bg': '#FFFFFF',
-                        'accent-pink': '#FF8FA3', // Warna tombol/highlight
-                        'soft-pink': '#FFF0F3',
-                        'text-dark': '#333333',
-                        'text-gray': '#888888',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            background-color: #FF9EAA; /* Warna background utama sesuai gambar */
-        }
-        .glass-card {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-        /* Custom Scrollbar for table */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #FF8FA3;
-            border-radius: 4px;
-        }
-    </style>
-</head>
-<body class="p-4 md:p-8 min-h-screen">
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #FFE5E5 0%, #E5F3FF 100%);
+      min-height: 100%;
+      width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
 
-    <div class="max-w-7xl mx-auto space-y-6">
+    html, body {
+      height: 100%;
+    }
 
-        <div class="glass-card p-8">
-            <h1 class="text-3xl font-bold text-gray-800">Target Vs Realization Create DN Local Order Brown Paper</h1>
-            <p class="text-gray-400 mt-1">DN Order Tracking System</p>
-        </div>
+    @keyframes floatAnimation {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <div class="glass-card p-6 col-span-1 lg:col-span-2">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold flex items-center gap-2">
-                        <span class="bg-blue-100 text-blue-500 p-2 rounded-lg"><i class="fa-regular fa-calendar"></i></span>
-                        Order Calendar
-                    </h2>
-                    <div class="flex items-center gap-4">
-                        <button class="w-8 h-8 rounded bg-brand-bg text-white hover:opacity-80"><i class="fa-solid fa-chevron-left"></i></button>
-                        <span class="font-bold text-gray-700">December 2025</span>
-                        <button class="w-8 h-8 rounded bg-brand-bg text-white hover:opacity-80"><i class="fa-solid fa-chevron-right"></i></button>
-                    </div>
-                </div>
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(255, 182, 193, 0.5); }
+      50% { box-shadow: 0 0 40px rgba(255, 182, 193, 0.8), 0 0 60px rgba(255, 182, 193, 0.6); }
+    }
 
-                <div class="grid grid-cols-7 gap-2 text-center text-sm mb-2 font-bold text-gray-400">
-                    <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
-                </div>
-                <div class="grid grid-cols-7 gap-2 text-center" id="calendar-grid">
-                    <div class="p-4 text-gray-300">30</div>
-                    <div class="p-4 bg-accent-pink text-white rounded-xl shadow-md transform scale-105 font-bold">1</div>
-                    <div class="p-4 font-medium">2</div>
-                    <div class="p-4 font-medium">3</div>
-                    <div class="p-4 font-medium">4</div>
-                    <div class="p-4 font-medium">5</div>
-                    <div class="p-4 bg-red-100 text-red-500 rounded-xl">6</div> <div class="p-4 bg-red-100 text-red-500 rounded-xl">7</div>
-                    <div class="p-4 font-medium">8</div>
-                    <div class="p-4 font-medium">9</div>
-                    <div class="p-4 font-medium">10</div>
-                    <div class="p-4 font-medium">11</div>
-                    <div class="p-4 font-medium">12</div>
-                    <div class="p-4 bg-red-100 text-red-500 rounded-xl">13</div>
+    @keyframes slideInFromTop {
+      from {
+        opacity: 0;
+        transform: translateY(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
-                    <div class="p-4 bg-red-100 text-red-500 rounded-xl">14</div>
-                    <div class="p-4 font-medium">15</div>
-                    <div class="p-4 font-medium">16</div>
-                    <div class="p-4 font-medium">17</div>
-                    <div class="p-4 font-medium">18</div>
-                    <div class="p-4 font-medium">19</div>
-                    <div class="p-4 bg-red-100 text-red-500 rounded-xl">20</div>
-                </div>
-            </div>
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
 
-            <div class="glass-card p-6">
-                <h2 class="text-xl font-bold flex items-center gap-2 mb-6">
-                    <span class="text-2xl">🎨</span> Choose Theme
-                </h2>
-                <div class="grid grid-cols-3 gap-4">
-                    <div class="flex flex-col items-center gap-2 cursor-pointer">
-                        <div class="w-full aspect-video bg-pink-300 rounded-lg border-4 border-gray-700 shadow-sm"></div>
-                        <span class="text-xs font-bold">Pink Blossom</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-2 cursor-pointer opacity-60 hover:opacity-100">
-                        <div class="w-full aspect-video bg-green-300 rounded-lg"></div>
-                        <span class="text-xs">Mint Fresh</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-2 cursor-pointer opacity-60 hover:opacity-100">
-                        <div class="w-full aspect-video bg-purple-300 rounded-lg"></div>
-                        <span class="text-xs">Lavender</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-2 cursor-pointer opacity-60 hover:opacity-100">
-                        <div class="w-full aspect-video bg-orange-300 rounded-lg"></div>
-                        <span class="text-xs">Peach Sunset</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-2 cursor-pointer opacity-60 hover:opacity-100">
-                        <div class="w-full aspect-video bg-blue-300 rounded-lg"></div>
-                        <span class="text-xs">Sky Blue</span>
-                    </div>
-                    <div class="flex flex-col items-center gap-2 cursor-pointer opacity-60 hover:opacity-100">
-                        <div class="w-full aspect-video bg-yellow-200 rounded-lg"></div>
-                        <span class="text-xs">Lemon Zest</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+    .dashboard-container {
+      width: 100%;
+      min-height: 100%;
+      padding: 24px;
+      background: linear-gradient(135deg, #FFB6C1 0%, #B4D7FF 100%);
+      position: relative;
+    }
 
-        <div class="glass-card p-4 flex flex-col md:flex-row gap-4 items-center">
-            <div class="flex items-center gap-2 text-lg font-bold w-full md:w-auto min-w-[150px]">
-                <i class="fa-solid fa-magnifying-glass text-blue-500"></i> Search & Filter
-            </div>
-            
-            <div class="relative flex-grow w-full">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400"></i>
-                <input type="text" placeholder="Search by customer, destination, type..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-accent-pink transition">
-            </div>
+    .dashboard-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      animation: floatAnimation 6s ease-in-out infinite;
+    }
 
-            <select class="p-2 border border-gray-200 rounded-lg bg-white w-full md:w-auto text-gray-600">
-                <option>All Months</option>
-            </select>
-            <select class="p-2 border border-gray-200 rounded-lg bg-white w-full md:w-auto text-gray-600">
-                <option>All Dates</option>
-            </select>
-            <select class="p-2 border border-gray-200 rounded-lg bg-white w-full md:w-auto text-gray-600">
-                <option>All Types</option>
-            </select>
-        </div>
+    .dashboard-header {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      animation: slideInFromTop 0.8s ease-out, glowPulse 3s ease-in-out infinite;
+      position: relative;
+      z-index: 10;
+    }
 
-        <div class="glass-card p-6">
-            <h2 class="text-xl font-bold mb-4">Add New DN Order</h2>
-            
-            <form id="orderForm" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                <div class="col-span-1">
-                    <label class="block text-xs font-bold text-gray-500 mb-1">Date</label>
-                    <input type="date" id="inputDate" value="2025-12-01" class="w-full p-2 border border-gray-200 rounded-lg focus:border-accent-pink focus:outline-none">
-                </div>
+    .header-title {
+      font-size: 32px;
+      font-weight: 800;
+      color: #2D3748;
+      margin-bottom: 8px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+      letter-spacing: -0.5px;
+    }
 
-                <div class="col-span-1">
-                    <label class="block text-xs font-bold text-gray-500 mb-1">Order Type</label>
-                    <select id="inputType" class="w-full p-2 border border-gray-200 rounded-lg focus:border-accent-pink focus:outline-none bg-white">
-                        <option value="">Select Type</option>
-                        <option value="BU 17">BU 17</option>
-                        <option value="CMI">CMI</option>
-                    </select>
-                </div>
+    .header-subtitle {
+      font-size: 15px;
+      color: #718096;
+      font-weight: 500;
+    }
 
-                <div class="col-span-1">
-                    <label class="block text-xs font-bold text-gray-500 mb-1">Customer Name</label>
-                    <input type="text" id="inputCustomer" placeholder="Enter customer name" class="w-full p-2 border border-gray-200 rounded-lg focus:border-accent-pink focus:outline-none">
-                </div>
+    .main-menu {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+      animation: fadeIn 1s ease-out;
+      position: relative;
+      z-index: 10;
+    }
 
-                <div class="col-span-1">
-                    <label class="block text-xs font-bold text-gray-500 mb-1">Destination</label>
-                    <input type="text" id="inputDest" placeholder="Enter destination" class="w-full p-2 border border-gray-200 rounded-lg focus:border-accent-pink focus:outline-none">
-                </div>
+    .calendar-section {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.3s ease;
+    }
 
-                <div class="col-span-1 relative">
-                    <label class="block text-xs font-bold text-gray-500 mb-1">Target DN (MT)</label>
-                    <input type="number" id="inputTarget" placeholder="Enter target" class="w-full p-2 border border-gray-200 rounded-lg focus:border-accent-pink focus:outline-none">
-                    <p class="text-[10px] text-gray-400 mt-1">Auto-rounds: 21→20, 23→25, 51→50, 53→55</p>
-                </div>
+    .calendar-section:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
 
-                <div class="col-span-1 md:col-span-1 md:col-start-1 mt-4">
-                    <button type="submit" class="bg-accent-pink hover:bg-pink-400 text-white font-bold py-2 px-6 rounded-lg shadow-lg flex items-center gap-2 transition w-full justify-center">
-                        <i class="fa-solid fa-plus"></i> ADD ORDER
-                    </button>
-                </div>
-            </form>
-        </div>
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="glass-card p-6 border-l-4 border-accent-pink flex flex-col justify-center">
-                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">TOTAL TARGET BU 17</span>
-                <span id="totalBU17" class="text-3xl font-bold text-gray-800 mt-2">0.00</span>
-            </div>
-            <div class="glass-card p-6 border-l-4 border-teal-400 flex flex-col justify-center">
-                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">TOTAL TARGET CMI</span>
-                <span id="totalCMI" class="text-3xl font-bold text-gray-800 mt-2">0.00</span>
-            </div>
-            <div class="glass-card p-6 border-l-4 border-yellow-400 flex flex-col justify-center">
-                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">TOTAL ALL TARGET</span>
-                <span id="totalAll" class="text-3xl font-bold text-gray-800 mt-2">0.00</span>
-            </div>
-        </div>
+    .calendar-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #2D3748;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
 
-        <div class="glass-card p-6 mb-10">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold flex items-center gap-2">
-                    <span class="text-blue-500"><i class="fa-solid fa-table-list"></i></span>
-                    DN Orders Data
-                </h2>
-                <div class="flex gap-2">
-                    <button class="px-4 py-2 bg-purple-400 text-white rounded-lg text-xs font-bold hover:bg-purple-500"><i class="fa-solid fa-print"></i> PRINT PREVIEW</button>
-                    <button class="px-4 py-2 bg-blue-400 text-white rounded-lg text-xs font-bold hover:bg-blue-500"><i class="fa-solid fa-download"></i> DOWNLOAD</button>
-                </div>
-            </div>
+    .calendar-nav {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-accent-pink text-white text-xs uppercase">
-                            <th class="p-3 rounded-l-lg">Date</th>
-                            <th class="p-3">Type</th>
-                            <th class="p-3">Customer Name</th>
-                            <th class="p-3">Destination</th>
-                            <th class="p-3">Target DN (MT)</th>
-                            <th class="p-3 rounded-r-lg text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="text-sm text-gray-600">
-                        <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                            <td class="p-4" colspan="6" class="text-center text-gray-400">No data available yet.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    .calendar-nav-btn {
+      background: linear-gradient(135deg, #FFB6C1 0%, #FF8FA3 100%);
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(255, 182, 193, 0.4);
+    }
 
-    </div>
+    .calendar-nav-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(255, 182, 193, 0.6);
+    }
 
-    <script>
-        // 1. Logic for Auto-Rounding Target Input
-        const targetInput = document.getElementById('inputTarget');
-        
-        targetInput.addEventListener('blur', function() {
-            let val = parseFloat(this.value);
-            if (!isNaN(val)) {
-                // Logic pembulatan sederhana sesuai note (ujung 1/2 -> 0, ujung 3/4 -> 5, dll)
-                // Ini logika simplifikasi untuk demo:
-                // Jika ends with 1 or 2 -> round down to 0
-                // Jika ends with 3 or 4 -> round up to 5
-                // Jika ends with 6 or 7 -> round down to 5
-                // Jika ends with 8 or 9 -> round up to 10 (next 0)
-                
-                let remainder = val % 5;
-                let rounded = 0;
+    .calendar-month {
+      font-size: 18px;
+      font-weight: 700;
+      color: #2D3748;
+      min-width: 150px;
+      text-align: center;
+    }
 
-                // Menggunakan Math.round ke kelipatan 5 terdekat
-                rounded = Math.round(val / 5) * 5;
-                
-                this.value = rounded;
-            }
-        });
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
 
-        // 2. Logic for Adding Data to Table & Updating Totals
-        const form = document.getElementById('orderForm');
-        const tableBody = document.getElementById('tableBody');
-        let orders = [];
+    .calendar-day-header {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #718096;
+      padding: 12px 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
 
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: #F7FAFC;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+      position: relative;
+    }
 
-            // Get Values
-            const date = document.getElementById('inputDate').value;
-            const type = document.getElementById('inputType').value;
-            const customer = document.getElementById('inputCustomer').value;
-            const dest = document.getElementById('inputDest').value;
-            const target = parseFloat(document.getElementById('inputTarget').value) || 0;
+    .calendar-day:hover {
+      transform: scale(1.05);
+      background: #E2E8F0;
+      border-color: #FFB6C1;
+    }
 
-            if(!type || !customer) {
-                alert("Please fill in required fields");
-                return;
-            }
+    .calendar-day.has-orders {
+      background: linear-gradient(135deg, #FFE5E9 0%, #FFD0D9 100%);
+      border-color: #FFB6C1;
+      box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
+    }
 
-            // Add to Array
-            orders.push({ date, type, customer, dest, target });
+    .calendar-day.has-orders::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      width: 6px;
+      height: 6px;
+      background: #FF1744;
+      border-radius: 50%;
+      animation: glowPulse 2s ease-in-out infinite;
+    }
 
-            // Render Table
-            renderTable();
-            
-            // Update Totals
-            updateTotals();
+    .calendar-day.today {
+      background: linear-gradient(135deg, #FFB6C1 0%, #FF8FA3 100%);
+      color: white;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(255, 182, 193, 0.5);
+    }
 
-            // Reset Form (kecuali tanggal)
-            document.getElementById('inputCustomer').value = '';
-            document.getElementById('inputDest').value = '';
-            document.getElementById('inputTarget').value = '';
-        });
+    .calendar-day.selected {
+      background: linear-gradient(135deg, #A8E6CF 0%, #7ED9B3 100%);
+      color: white;
+      font-weight: 800;
+      border-color: #A8E6CF;
+    }
 
-        function renderTable() {
-            if (orders.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">No data available.</td></tr>';
-                return;
-            }
+    .calendar-day.weekend {
+      background: linear-gradient(135deg, #FFE5E5 0%, #FFD0D0 100%);
+      color: #D32F2F;
+      border-color: #FFCDD2;
+    }
 
-            let html = '';
-            orders.forEach((order, index) => {
-                html += `
-                <tr class="border-b border-gray-100 hover:bg-pink-50 transition animate-fade-in">
-                    <td class="p-3 font-medium text-gray-800">${order.date}</td>
-                    <td class="p-3"><span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">${order.type}</span></td>
-                    <td class="p-3 font-bold">${order.customer}</td>
-                    <td class="p-3">${order.dest}</td>
-                    <td class="p-3 font-bold text-accent-pink">${order.target.toFixed(2)}</td>
-                    <td class="p-3 text-center">
-                        <button onclick="deleteOrder(${index})" class="text-red-400 hover:text-red-600 transition"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>
-                `;
-            });
-            tableBody.innerHTML = html;
-        }
+    .calendar-day.weekend:hover {
+      background: linear-gradient(135deg, #FFD0D0 0%, #FFBABA 100%);
+      border-color: #FF8A80;
+    }
 
-        function deleteOrder(index) {
-            orders.splice(index, 1);
-            renderTable();
-            updateTotals();
-        }
+    .calendar-day.weekend.has-orders {
+      background: linear-gradient(135deg, #FFCDD2 0%, #FFBABA 100%);
+      border-color: #FF5252;
+    }
 
-        function updateTotals() {
-            let bu17 = 0;
-            let cmi = 0;
+    .calendar-day.other-month {
+      opacity: 0.3;
+      pointer-events: none;
+    }
 
-            orders.forEach(o => {
-                if (o.type === 'BU 17') bu17 += o.target;
-                if (o.type === 'CMI') cmi += o.target;
-            });
+    .calendar-day-number {
+      font-size: 14px;
+      font-weight: 600;
+    }
 
-            const total = bu17 + cmi;
+    .calendar-day-count {
+      font-size: 10px;
+      margin-top: 2px;
+      opacity: 0.8;
+    }
 
-            // Animasi angka (simple)
-            document.getElementById('totalBU17').innerText = bu17.toFixed(2);
-            document.getElementById('totalCMI').innerText = cmi.toFixed(2);
-            document.getElementById('totalAll').innerText = total.toFixed(2);
-        }
-    </script>
-</body>
-</html>
+    .theme-selector-section {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .theme-selector-section:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+
+    .theme-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #2D3748;
+      margin-bottom: 16px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .search-filter-section {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      animation: fadeIn 1.2s ease-out;
+      position: relative;
+      z-index: 10;
+    }
+
+    .search-filter-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #2D3748;
+      margin-bottom: 16px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .search-filter-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 16px;
+    }
+
+    .theme-card {
+      padding: 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 3px solid transparent;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .theme-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .theme-card:hover::before {
+      left: 100%;
+    }
+
+    .theme-card:hover {
+      transform: translateY(-8px) scale(1.05);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+    }
+
+    .theme-card.active {
+      border-color: #2D3748;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      animation: glowPulse 2s ease-in-out infinite;
+    }
+
+    .theme-name {
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 8px;
+      color: #2D3748;
+    }
+
+    .theme-preview {
+      width: 100%;
+      height: 60px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .controls-section {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      animation: fadeIn 1.4s ease-out;
+      position: relative;
+      z-index: 10;
+      transition: all 0.3s ease;
+    }
+
+    .controls-section:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 6px;
+    }
+
+    .form-input, .form-select {
+      padding: 10px 12px;
+      border: 2px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: #FFB6C1;
+      box-shadow: 0 0 0 3px rgba(255, 182, 193, 0.2);
+    }
+
+    .btn {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s ease, height 0.6s ease;
+    }
+
+    .btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #FFB6C1 0%, #FF8FA3 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(255, 182, 193, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0 12px 24px rgba(255, 182, 193, 0.6);
+    }
+
+    .btn-primary:active {
+      transform: translateY(-2px) scale(1.02);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: #A8E6CF;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #88D4AB;
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: #FFB6C1;
+      color: white;
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .btn-danger:hover {
+      background: #FF8FA3;
+    }
+
+    .btn-edit {
+      background: #FFD4A3;
+      color: white;
+      padding: 8px 12px;
+      font-size: 12px;
+      margin-right: 8px;
+    }
+
+    .btn-edit:hover {
+      background: #FFBC7D;
+    }
+
+    .btn-print {
+      background: #D4A5D4;
+      color: white;
+      padding: 10px 20px;
+      font-size: 14px;
+    }
+
+    .btn-print:hover {
+      background: #B794C8;
+    }
+
+    .btn-download {
+      background: #B4D7FF;
+      color: white;
+      padding: 8px 16px;
+      font-size: 13px;
+    }
+
+    .btn-download:hover {
+      background: #8FC1FF;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .stats-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-left: 6px solid;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transform: skewX(-20deg);
+      transition: right 0.6s ease;
+    }
+
+    .stat-card:hover::before {
+      right: 150%;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+    }
+
+    .stat-card.bu17 {
+      border-left-color: #FFB6C1;
+    }
+
+    .stat-card.cmi {
+      border-left-color: #A8E6CF;
+    }
+
+    .stat-card.total {
+      border-left-color: #FFD4A3;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
