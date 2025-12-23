@@ -1,133 +1,143 @@
+const roundDN = (value) => {
+  const num = parseInt(value);
+  const remainder = num % 10;
+  if (remainder >= 3 && remainder <= 4) return Math.floor(num / 10) * 10 + 5;
+  if (remainder <= 2) return Math.floor(num / 10) * 10;
+  return num; // Default for other values
+};
+const roundDN = (value) => {
+  const num = parseInt(value);
+  const remainder = num % 10;
+  if (remainder >= 3 && remainder <= 4) return Math.floor(num / 10) * 10 + 5;
+  if (remainder <= 2) return Math.floor(num / 10) * 10;
+  return num; // Default for other values
+};
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, push, onValue, remove, set } from "firebase/database";
+import { getDatabase, ref, push, onValue, remove, update } from "firebase/database";
+import Chart from 'react-apexcharts'; // For Bar/Line Graphs
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import Chart from 'react-apexcharts';
 
-[span_1](start_span)// Firebase Config dari source[span_1](end_span)
+[span_1](start_span)// Config from source[span_1](end_span)
 const firebaseConfig = {
   apiKey: "AIzaSyAEZA47N7205zjQEKT2iSViQJvCwLEzusg",
   authDomain: "dn-ikk.firebaseapp.com",
   databaseURL: "https://dn-ikk-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "dn-ikk",
-  storageBucket: "dn-ikk.firebasestorage.app",
-  messagingSenderId: "121412700238",
-  appId: "1:121412700238:web:598d91bcebc6976a615b1f",
-  measurementId: "G-6P6BVH3XQB"
+  appId: "1:121412700238:web:598d91bcebc6976a615b1f"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const App = () => {
-  const [user, setUser] = useState({ loggedIn: false, name: '' });
+export default function OrderDNApp() {
   const [orders, setOrders] = useState([]);
-  const [theme, setTheme] = useState('professional'); // professional, cherry, anime
-  const [lang, setLang] = useState('en');
+  const [theme, setTheme] = useState('professional');
+  const [search, setSearch] = useState('');
 
-  // Logika Pembulatan DN Target
-  const roundDN = (val) => {
-    const n = parseInt(val);
-    const rem = n % 10;
-    if (rem === 3 || rem === 4) return Math.floor(n / 10) * 10 + 5; // 23,24 -> 25
-    if (rem <= 2) return Math.floor(n / 10) * 10; // 20,21,22 -> 20
-    return n;
-  };
-
-  // CRUD: Add Order Cepat
-  const handleAddOrder = (data) => {
+  // 1. CRUD Operations
+  const addOrder = (newData) => {
     const ordersRef = ref(db, 'orders');
-    push(ordersRef, {
-      ...data,
-      targetDn: roundDN(data.targetDn),
-      createdBy: "IKK",
-      date: new Date().toISOString().split('T')[0]
-    });
+    push(ordersRef, { ...newData, timestamp: Date.now(), createdBy: 'IKK' });
   };
 
-  // Export PDF dengan Footer "Created By IKK"
-  const exportPDF = () => {
+  // 2. Export Functions (PDF, Excel, JPG)
+  const downloadPDF = () => {
     const doc = new jsPDF();
-    doc.text("ORDER DN IKK - INDAH KIAT KARAWANG", 14, 15);
-    doc.autoTable({
-      head: [['Customer', 'Destination', 'BU', 'Target DN']],
-      body: orders.map(o => [o.customer, o.destination, o.bu, o.targetDn]),
-      startY: 20
-    });
-    doc.text(`Created By: IKK`, 14, doc.internal.pageSize.height - 10);
-    doc.save("DN_IKK_Report.pdf");
+    doc.text("ORDER DN IKK - INDAH KIAT KARAWANG", 10, 10);
+    doc.autoTable({ html: '#dn-table' });
+    doc.text(`Created By: IKK`, 10, doc.internal.pageSize.height - 10);
+    doc.save('Order_DN_IKK.pdf');
   };
-
-  if (!user.loggedIn) {
-    return (
-      <div className="login-screen">
-        <h2>Login IKK</h2>
-        <input type="text" placeholder="Username" id="user" />
-        <input type="password" placeholder="Password" id="pass" />
-        <button onClick={() => {
-          if(document.getElementById('user').value === 'IKK' && document.getElementById('pass').value === '123') 
-          setUser({loggedIn: true, name: 'IKK'})
-        }}>Enter</button>
-      </div>
-    );
-  }
 
   return (
-    <div className={`app-theme-${theme} p-6`}>
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">ORDER DN IKK</h1>
-        <div className="flex gap-2">
-          <button onClick={() => setTheme('professional')} className="p-2 border">💼 Professional</button>
-          <button onClick={() => setTheme('cherry')} className="p-2 border bg-pink-400">🍒 Cherry</button>
-          <button onClick={() => setTheme('anime')} className="p-2 border bg-purple-400">✨ Anime</button>
+    <div className={`app-container theme-${theme}`}>
+      <header className="flex justify-between p-4 bg-slate-800 text-white">
+        <h1>ORDER DN IKK - INDAH KIAT KARAWANG</h1>
+        <div className="search-bar">
+          <input 
+            type="text" 
+            placeholder="Search Customer..." 
+            onChange={(e) => setSearch(e.target.value)}
+            className="text-black p-1 rounded"
+          />
         </div>
       </header>
 
-      {/* Stats Chart Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="bg-white p-4 rounded shadow">
-          <h3>Top Customer (MT)</h3>
-          <Chart 
-            type="bar" 
-            series={[{ data: orders.map(o => o.targetDn) }]} 
-            options={{ xaxis: { categories: orders.map(o => o.customer) }}} 
+      <main className="grid grid-cols-12 gap-4 p-4">
+        {/* Calendar Section */}
+        <div className="col-span-4 bg-white p-4 shadow rounded">
+          <FullCalendar 
+            plugins={[dayGridPlugin]} 
+            initialView="dayGridMonth"
+            events={orders.map(o => ({ title: o.customer, date: o.date }))}
           />
         </div>
-        <div className="bg-white p-4 rounded shadow">
-          <button onClick={exportPDF} className="bg-blue-500 text-white p-2 w-full mb-2">Download PDF</button>
-          <button onClick={() => window.print()} className="bg-green-500 text-white p-2 w-full">Print Preview</button>
-        </div>
-      </div>
 
-      {/* Table Data */}
-      <table className="w-full bg-white shadow rounded overflow-hidden">
-        <thead className="bg-gray-800 text-white">
-          <tr>
-            <th>Customer Name</th>
-            <th>Destination</th>
-            <th>BU (17/CMI)</th>
-            <th>Target DN</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map(order => (
-            <tr key={order.id} className="border-b">
-              <td className="p-2">{order.customer}</td>
-              <td className="p-2">{order.destination}</td>
-              <td className="p-2">{order.bu}</td>
-              <td className="p-2 font-bold">{order.targetDn}</td>
-              <td className="p-2">
-                <button onClick={() => remove(ref(db, `orders/${order.id}`))} className="text-red-500">Delete</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        {/* Table Section */}
+        <div className="col-span-8 bg-white p-4 shadow rounded">
+          <table id="dn-table" className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th>Customer</th>
+                <th>Destination</th>
+                <th>BU</th>
+                <th>Target New DN (MT)</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.filter(o => o.customer.toLowerCase().includes(search.toLowerCase())).map(order => (
+                <tr key={order.id}>
+                  <td>{order.customer}</td>
+                  <td>{order.destination}</td>
+                  <td>{order.buType}</td>
+                  <td>{order.targetDn}</td>
+                  <td>
+                    <button onClick={() => remove(ref(db, `orders/${order.id}`))}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      {/* Analytics Chart */}
+      <div className="p-4">
+        <Chart 
+          type="bar"
+          series={[{ name: 'DN Target', data: orders.map(o => o.targetDn) }]}
+          options={{ chart: { id: 'basic-bar' }, xaxis: { categories: orders.map(o => o.customer) }}}
+        />
+      </div>
     </div>
   );
-};
+}
 
-export default App;
+// Struktur Data Tema di Settings
+const themes = {
+  professional: {
+    primary: "#1e293b", // Slate 800
+    secondary: "#f8fafc",
+    text: "#000000",
+    font: "Inter, sans-serif"
+  },
+  cherry: {
+    primary: "#ff4d6d", // Cherry Pink
+    secondary: "#fff0f3",
+    text: "#590d22",
+    font: "Poppins, sans-serif"
+  },
+  anime: {
+    primary: "#6d5dfc", 
+    secondary: "#e4e7ee",
+    text: "#2d3436",
+    font: "Comic Sans MS, cursive",
+    background: "url('anime-bg.jpg')"
+  }
+};
